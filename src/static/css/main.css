@@ -1,0 +1,96 @@
+/*These are general settings that apply to everything by default*/
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Helvetica", Arial, sans-serif;
+    color: #000000;
+    /* Changes the color of whole background */
+    background-color: #222034;
+}
+
+/*This is that menu that appears on top*/
+header {
+    background-color: #3F3F74;
+    height: 40px;
+    width: 100%;
+    opacity: .9;
+    margin-bottom: 10px;
+}
+
+/*This is site's logo. For now just text, maybe will draw some fancy art l8r*/
+header h1.logo {
+    font-size: 2em;
+    color: #fff;
+    margin-top: 5px;
+    text-transform: uppercase;
+    float: left;
+}
+
+/* What happens when you hover on logo
+header h1.logo:hover {
+    color: #B7C6FF;
+    text-decoration: none;
+}
+*/
+
+/* As you can probably noticed, names are the same as *div* classes */
+/* This container affects both uploading form and corners of top menus */
+.container {
+    width: 1000px;
+    margin: 0 auto;
+}
+
+div.upload_file {
+    padding: 10px 0 30px 0;
+    background-color: #B7C6FF;
+    /* this specifes how round border's corners will be. Less - more sharp */
+    -webkit-border-radius: 6px;
+       -moz-border-radius: 6px;
+            border-radius: 6px;
+    /* make upload form appear on center of screen */
+    text-align: center;
+}
+
+h2 {
+    font-size: 3em;
+    margin-top: 40px;
+    text-align: center;
+    letter-spacing: -2px;
+}
+
+h3 {
+    font-size: 1.7em;
+    font-weight: 100;
+    margin-top: 30px;
+    text-align: center;
+    letter-spacing: -1px;
+    color: #999;
+}
+
+/* This specifies pos of menu elements to be on right */
+.menu {
+    float: right;
+    margin-top: 12.5px;
+}
+
+.menu li {
+    display:inline;
+}
+
+.menu li + li {
+    margin-left: 35px;
+}
+
+.menu li a {
+    text-decoration: none;
+    margin: 0;
+    font-size: 1em;
+    color: #fff;
+    text-transform: uppercase;
+    float: left;
+}
+
+.menu li a:hover {
+    color: #CBDBFC;
+    text-decoration: none;
+}
