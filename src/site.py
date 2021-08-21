@@ -14,28 +14,14 @@ from os.path import join, splitext
 from os import environ, makedirs
 from sys import exit
 from uuid import uuid4
-import pymongo
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 import atexit
 from datetime import datetime
+from src import database
 import logging
 
 
 log = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class FileInfo:
-    # name of file on disk
-    filename: str
-    # name of file how its been received (after securing but without uuid4)
-    original_name: str
-    # not implemented yet #TODO
-    # uploader: str
-    # time of file's upload
-    uploaded: datetime
-    # time when file was accessed last time
-    last_access: datetime
 
 
 # TODO: maybe make it possible to load settings from config.ini/config.toml
@@ -71,7 +57,8 @@ def create_app() -> Flask:
 
     try:
         log.debug("Attempting to connect to database")
-        db_client = pymongo.MongoClient(app.config["MONGODB_ADDRESS"])
+        with app.app_context():
+            db_client = database.get_client()
         db = db_client[app.config["DATABASE_NAME"]]
         # For now only adding "files", since users arent there yet #TODO
         files_collection = db["files"]
@@ -101,7 +88,7 @@ def create_app() -> Flask:
         # #TODO: add user-specific subdirectories, save into them based on id
         file.save(join(app.config["UPLOAD_DIRECTORY"], local_filename))
         savetime = datetime.utcnow()
-        info = FileInfo(
+        info = database.FileInfo(
             filename=local_filename,
             original_name=filename,
             uploaded=savetime,
@@ -146,14 +133,12 @@ def create_app() -> Flask:
 
         return render_template("upload_file.html.jinja")
 
-    def close_db_connection():
-        """Close connection to the database"""
-        if db_client is not None:
-            db_client.close()
-            log.debug("Successfully closed connection to database")
-
     # Ensuring closeup of application will kill database connection
     # Idk if its the proper way to do that stuff, but will do for now #TODO
-    atexit.register(close_db_connection)
+    def close_connection():
+        with app.app_context():
+            database.close_connection()
+
+    atexit.register(close_connection)
 
     return app
