@@ -58,8 +58,7 @@ def create_app() -> Flask:
     try:
         log.debug("Attempting to connect to database")
         with app.app_context():
-            db_client = database.get_client()
-        db = db_client[app.config["DATABASE_NAME"]]
+            db = database.get_db()
         # For now only adding "files", since users arent there yet #TODO
         files_collection = db["files"]
 
@@ -98,7 +97,7 @@ def create_app() -> Flask:
 
         return local_filename
 
-    @app.route("/uploads/<path:name>", methods=["GET", "POST"])
+    @app.route("/uploads/<path:name>", methods=("GET", "POST"))
     def download_file(name: str) -> wrappers.Response:
         """Get link to download specified file from server's UPLOAD_DIRECTORY"""
 
@@ -113,23 +112,22 @@ def create_app() -> Flask:
         # return send_from_directory(app.config["UPLOAD_DIRECTORY"], name, as_attachment=True)
         return send_from_directory(app.config["UPLOAD_DIRECTORY"], name)
 
-    @app.route("/", methods=["GET", "POST"])
+    @app.route("/")
+    def index():
+        return render_template("index.html.jinja")
+
+    @app.route("/upload", methods=("GET", "POST"))
     def upload_file():
         """File uploading form"""
 
         if request.method == "POST":
-            if "file" not in request.files:
-                flash("Received no files")
-                return redirect(request.url)
-
-            file = request.files["file"]
-
-            if file.filename == "":
+            file = request.files.get("file", None)
+            if file is None or file.filename == "":
                 flash("No file has been selected")
-                return redirect(request.url)
-
-            if file and allowed_file(file.filename):
+            elif file and allowed_file(file.filename):
                 return redirect(url_for("download_file", name=save_file(file)))
+            else:
+                flash("Invalid file type, please try something else")
 
         return render_template("upload_file.html.jinja")
 
@@ -140,5 +138,8 @@ def create_app() -> Flask:
             database.close_connection()
 
     atexit.register(close_connection)
+
+    #from src import auth
+    #app.register_blueprint(auth.bp)
 
     return app

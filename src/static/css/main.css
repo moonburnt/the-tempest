@@ -38,9 +38,10 @@ header h1.logo:hover {
 .container {
     width: 1000px;
     margin: 0 auto;
+    margin-bottom: 10px;
 }
 
-div.upload_file {
+div.page_content {
     padding: 10px 0 30px 0;
     background-color: #B7C6FF;
     /* this specifes how round border's corners will be. Less - more sharp */
