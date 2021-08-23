@@ -1,24 +1,8 @@
 from flask import current_app, g
 import pymongo
-from dataclasses import dataclass
-from datetime import datetime
 import logging
 
 log = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class FileInfo:
-    # name of file on disk
-    filename: str
-    # name of file how its been received (after securing but without uuid4)
-    original_name: str
-    # not implemented yet #TODO
-    # uploader: str
-    # time of file's upload
-    uploaded: datetime
-    # when file was accessed the last time
-    last_access: datetime
 
 
 # All of these are meant to be casted via "with app.context()", unless chained
