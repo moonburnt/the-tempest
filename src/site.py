@@ -68,7 +68,7 @@ def create_app() -> Flask:
 
     app.register_blueprint(filesharing.bp)
 
-    # from src import auth
-    # app.register_blueprint(auth.bp)
+    from src import auth
+    app.register_blueprint(auth.bp)
 
     return app

@@ -4,7 +4,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-
 # All of these are meant to be casted via "with app.context()", unless chained
 def get_client():
     """Get connection to database from current flask application"""

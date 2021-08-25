@@ -68,30 +68,31 @@ h3 {
     color: #999;
 }
 
-/* This specifies pos of menu elements to be on right */
-.menu {
-    float: right;
+/* Top menu elements */
+
+/* These "left" and "right" things should make two menus - one to display on 
+right, other on left. So we will be able to, say, show login stuff at right and 
+general functions on left. Or something like that*/
+.menu_left {
     margin-top: 12.5px;
-}
-
-.menu li {
-    display:inline;
-}
-
-.menu li + li {
-    margin-left: 35px;
-}
-
-.menu li a {
-    text-decoration: none;
-    margin: 0;
-    font-size: 1em;
-    color: #fff;
-    text-transform: uppercase;
     float: left;
 }
 
-.menu li a:hover {
+.menu_right {
+    margin-top: 12.5px;
+    float: right;
+}
+
+.menubar a {
+    float: center;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 12.5px;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.menubar a:hover {
     color: #CBDBFC;
     text-decoration: none;
 }
