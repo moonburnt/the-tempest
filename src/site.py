@@ -30,6 +30,10 @@ def create_app() -> Flask:
             # Mongodb shenanigans for database.py module
             MONGODB_ADDRESS=environ["MONGODB_ADDRESS"],
             DATABASE_NAME=environ["DATABASE_NAME"],
+            # Minimal/maximal allowed login/password lengths
+            LOGIN_LENGTH=(6, 15),
+            # #TODO: maybe add something to ensure code contain special symbols?
+            PASSWORD_LENGTH=(6, 30),
         )
     except Exception as e:
         log.critical(f"Unable to configure site: {e}")
@@ -64,11 +68,10 @@ def create_app() -> Flask:
 
     atexit.register(close_connection)
 
-    from src import filesharing
+    # Attaching all blueprints to application
+    from src import filesharing, auth
 
     app.register_blueprint(filesharing.bp)
-
-    from src import auth
     app.register_blueprint(auth.bp)
 
     return app

@@ -8,6 +8,7 @@ from flask import (
     request,
     session,
     url_for,
+    current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from dataclasses import dataclass, asdict
@@ -15,6 +16,7 @@ from src.database import get_db
 from bson.json_util import dumps as bdumps
 from bson import ObjectId
 from json import loads as jloads
+from datetime import datetime
 import logging
 
 log = logging.getLogger(__name__)
@@ -28,6 +30,10 @@ class UserData:
     login: str
     # user's password
     password: str
+    # when user has registered their account
+    registration: datetime
+    # when user logged in for last time
+    last_access: datetime
 
 
 # This will create blueprint for authentication-related requests
@@ -38,26 +44,54 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 def register():
     """Register on site"""
     if request.method == "POST":
-        data = UserData(
-            login=request.form["login"],
-            password=request.form["password"],
-        )
+        name = request.form["login"]
+        pw = request.form["password"]
         db = get_db()
 
         error = None
-        if not data.login:
+        if not name:
             error = "Login is required"
-        elif not data.password:
+        elif not pw:
             error = "Password is required"
-
-        if error is None:
+        elif not (
+            current_app.config["LOGIN_LENGTH"][0]
+            <= len(name)
+            <= current_app.config["LOGIN_LENGTH"][1]
+        ):
+            error = (
+                f"Invalid login length. Must be between "
+                f"{current_app.config['LOGIN_LENGTH'][0]} and "
+                f"{current_app.config['LOGIN_LENGTH'][1]}."
+            )
+        elif not (
+            current_app.config["PASSWORD_LENGTH"][0]
+            <= len(pw)
+            <= current_app.config["PASSWORD_LENGTH"][1]
+        ):
+            error = (
+                f"Invalid password length. Must be between "
+                f"{current_app.config['PASSWORD_LENGTH'][0]} and "
+                f"{current_app.config['PASSWORD_LENGTH'][1]}."
+            )
+        else:
             # Idk if this is the best way to ensure uniqueness of login. #TODO
-            if not db[USERS_COL_NAME].find_one({"login": data.login}):
-                data.password = generate_password_hash(data.password)
-                db[USERS_COL_NAME].insert_one(asdict(data))
-                return redirect(url_for("auth.login"))
-
-            error = "This login is already registered"
+            if not db[USERS_COL_NAME].find_one({"login": name}):
+                try:
+                    current_time = datetime.utcnow()
+                    data = UserData(
+                        login=name,
+                        password=generate_password_hash(pw),
+                        registration=current_time,
+                        last_access=current_time,
+                    )
+                    db[USERS_COL_NAME].insert_one(asdict(data))
+                except Exception as e:
+                    log.error(f"Unable to register user: {e}")
+                    error = "Internal registration error. Please inform administrator"
+                else:
+                    return redirect(url_for("auth.login"))
+            else:
+                error = "This login is already registered"
 
         flash(error)
 
@@ -68,17 +102,15 @@ def register():
 def login():
     """Login to already registered account"""
     if request.method == "POST":
-        data = UserData(
-            login=request.form["login"],
-            password=request.form["password"],
-        )
+        name = request.form["login"]
+        pw = request.form["password"]
         db = get_db()
 
         error = None
-        user = db[USERS_COL_NAME].find_one({"login": data.login})
+        user = db[USERS_COL_NAME].find_one({"login": name})
         if user is None:
             error = "Invalid login"
-        elif not check_password_hash(user["password"], data.password):
+        elif not check_password_hash(user["password"], pw):
             error = "Invalid password"
 
         if error is None:
@@ -87,6 +119,11 @@ def login():
             # enough... I think #TODO
             # We need to convert bson to string first, to store it there
             session["user_id"] = jloads(bdumps(user["_id"]))["$oid"]
+            # updatin last access time
+            db[USERS_COL_NAME].update_one(
+                {"login": name},
+                {"$set": {"last_access": datetime.utcnow()}},
+            )
             return redirect(url_for("index"))
 
         flash(error)
@@ -97,7 +134,7 @@ def login():
 # before_app_request will ensure this runs before every request to this bp's pages
 @bp.before_app_request
 def load_logged_in_user():
-    """Load logged in user"""
+    """Load logged in user's data"""
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -106,6 +143,7 @@ def load_logged_in_user():
         db = get_db()
         # we need to convert string to objectid to compare
         g.user = db[USERS_COL_NAME].find_one({"_id": ObjectId(user_id)})
+
 
 @bp.route("/logout")
 def logout():

@@ -16,7 +16,7 @@
                         </div>
                         <div class="menu_right">
                             {% if g.user %}
-                                <span>{{ g.user["login"] }}</span>
+                                <a><span>{{ g.user["login"] }}</span></a>
                                 <a href="{{ url_for('auth.logout') }}">Logout</a>
                             {% else %}
                                 <a href="{{ url_for('auth.register') }}">Register</a>
