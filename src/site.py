@@ -58,7 +58,17 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index():
-        return render_template("index.html.jinja")
+        # I shouldnt put return into with app.context() loop, coz it will break
+        # g values and similar stuff
+        with app.app_context():
+            files_amount = database.get_files_amount()
+            users_amount = database.get_users_amount()
+
+        return render_template(
+            "index.html.jinja",
+            files_amount=files_amount,
+            users_amount=users_amount,
+        )
 
     # Ensuring closeup of application will kill database connection
     # Idk if its the proper way to do that stuff, but will do for now #TODO

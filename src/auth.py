@@ -12,7 +12,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from dataclasses import dataclass, asdict
-from src.database import get_db
+from src.database import get_users_collection
 from bson.json_util import dumps as bdumps
 from bson import ObjectId
 from json import loads as jloads
@@ -20,8 +20,6 @@ from datetime import datetime
 import logging
 
 log = logging.getLogger(__name__)
-
-USERS_COL_NAME = "users"
 
 
 @dataclass
@@ -46,7 +44,7 @@ def register():
     if request.method == "POST":
         name = request.form["login"]
         pw = request.form["password"]
-        db = get_db()
+        col = get_users_collection()
 
         error = None
         if not name:
@@ -75,7 +73,7 @@ def register():
             )
         else:
             # Idk if this is the best way to ensure uniqueness of login. #TODO
-            if not db[USERS_COL_NAME].find_one({"login": name}):
+            if not col.find_one({"login": name}):
                 try:
                     current_time = datetime.utcnow()
                     data = UserData(
@@ -84,7 +82,7 @@ def register():
                         registration=current_time,
                         last_access=current_time,
                     )
-                    db[USERS_COL_NAME].insert_one(asdict(data))
+                    col.insert_one(asdict(data))
                 except Exception as e:
                     log.error(f"Unable to register user: {e}")
                     error = "Internal registration error. Please inform administrator"
@@ -104,10 +102,10 @@ def login():
     if request.method == "POST":
         name = request.form["login"]
         pw = request.form["password"]
-        db = get_db()
+        col = get_users_collection()
 
         error = None
-        user = db[USERS_COL_NAME].find_one({"login": name})
+        user = col.find_one({"login": name})
         if user is None:
             error = "Invalid login"
         elif not check_password_hash(user["password"], pw):
@@ -120,7 +118,7 @@ def login():
             # We need to convert bson to string first, to store it there
             session["user_id"] = jloads(bdumps(user["_id"]))["$oid"]
             # updatin last access time
-            db[USERS_COL_NAME].update_one(
+            col.update_one(
                 {"login": name},
                 {"$set": {"last_access": datetime.utcnow()}},
             )
@@ -140,9 +138,8 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        db = get_db()
         # we need to convert string to objectid to compare
-        g.user = db[USERS_COL_NAME].find_one({"_id": ObjectId(user_id)})
+        g.user = get_users_collection().find_one({"_id": ObjectId(user_id)})
 
 
 @bp.route("/logout")

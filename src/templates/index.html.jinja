@@ -1,7 +1,8 @@
 {% extends "layout.html.jinja" %}
 {% block content %}
     <h1>Hello and welcome to The Tempest</h1>
+    <p>Currently serving {{ files_amount }} files from {{ users_amount }} users</p>
+    <p></p>
     <p>To start uploading right away, proceed 
-    <a href="{{ url_for('filesharing.upload_file') }}">here</a>
-    </p>
+    <a href="{{ url_for('filesharing.upload_file') }}">here</a></p>
 {% endblock %}

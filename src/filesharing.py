@@ -9,7 +9,7 @@ from flask import (
     request,
     flash,
     render_template,
-    abort,
+    session,
 )
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
@@ -18,13 +18,11 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from os.path import join, splitext
 from os import environ, makedirs
-from src.database import get_db
+from src.database import get_files_collection
 import logging
 
 
 log = logging.getLogger(__name__)
-
-FILES_COL_NAME = "files"
 
 
 @dataclass(frozen=True)
@@ -37,11 +35,10 @@ class FileInfo:
     uploaded: datetime
     # when file was accessed the last time
     last_access: datetime
-    # login of user who uploaded file. Will be None in case of anonymous upload
+    # id of user who uploaded file. Will be None in case of anonymous upload
     uploader: str = None
-    # subdirectory where file is saved on disk. Is either None or user's login.
-    # Kept as separate value to be future-proof, in case it will be switched
-    # to uploader's id or something like that later
+    # subdirectory where file is saved on disk. Is either None or user's id.
+    # Kept as separate value to be future-proof, in case its value will change l8r
     location: str = None
 
 
@@ -64,8 +61,8 @@ def save_file(file: FileStorage, filename: str = None) -> str:
     name, extension = splitext(filename)
     # Adding uuid4 to name, to avoid overwriting existing files with same name
     local_filename = f"{name}-{uuid4()}{extension}"
-    # #TODO: maybe switch authorized upload directory's name from login to id?
-    uploader = g.user.get("login") if g.user else None
+    # idk if its secure to expose user's id to public #TODO
+    uploader = session.get("user_id")
     savepath = current_app.config["UPLOAD_DIRECTORY"]
     if uploader:
         savepath = join(savepath, uploader)
@@ -81,8 +78,7 @@ def save_file(file: FileStorage, filename: str = None) -> str:
         uploader=uploader,
         location=uploader,
     )
-    db = get_db()
-    db[FILES_COL_NAME].insert_one(asdict(info))
+    get_files_collection().insert_one(asdict(info))
 
     # This doesnt return uploader as uploader, but as location
     return local_filename, uploader
@@ -90,11 +86,10 @@ def save_file(file: FileStorage, filename: str = None) -> str:
 
 def get_download_link(name: str, directory: str = None):
     """Get download link for provided file"""
-    db = get_db()
 
     # Updating last access to file
     # TODO: in case file doesnt exist, it may cause trouble
-    db[FILES_COL_NAME].update_one(
+    get_files_collection().update_one(
         {"filename": name},
         {"$set": {"last_access": datetime.utcnow()}},
     )
