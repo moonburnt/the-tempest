@@ -96,3 +96,27 @@ general functions on left. Or something like that*/
     color: #CBDBFC;
     text-decoration: none;
 }
+
+/* Table stuff */
+table {
+    width: 75%;
+    /* This will ensure table appears on center */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Adding borders to table */
+table, th, td {
+    border: 1px solid;
+    border-collapse: collapse;
+}
+
+/* Recoloring table's header */
+table th {
+    background-color: #5B6EE1;
+}
+
+/* This will highlight current table's row with color */
+table tr:hover {
+    background-color: #639BFF;
+}

@@ -51,6 +51,8 @@ def create_app() -> Flask:
         log.debug("Attempting to connect to database")
         with app.app_context():
             db = database.get_db()
+            # Configuring collection indexes
+            database.initialize_files_indexes()
 
     except Exception as e:
         log.critical(f"Unable to establish database connection: {e}")
@@ -79,9 +81,10 @@ def create_app() -> Flask:
     atexit.register(close_connection)
 
     # Attaching all blueprints to application
-    from src import filesharing, auth
+    from src import filesharing, auth, profile
 
     app.register_blueprint(filesharing.bp)
     app.register_blueprint(auth.bp)
+    app.register_blueprint(profile.bp)
 
     return app

@@ -52,6 +52,32 @@ def get_files_amount() -> int:
     return get_files_collection().count()
 
 
+def initialize_files_indexes():
+    """Initialize all required indexes for 'files' collection of current db"""
+    # There should be no issues with casting it multiple times on same db, since
+    # according to mongodb docs indexes only get created if they didnt exist already
+
+    col = get_files_collection()
+
+    # For now we only need index to sort files from older to newer
+    col.create_index(
+        [("uploaded", pymongo.ASCENDING)],
+        name="Query for files, from oldest to newest",
+    )
+
+    # And maybe also to get files that has been accessed eternity ago
+    col.create_index(
+        [("last_access", pymongo.ASCENDING)],
+        name="Query for files last access time, from oldest to newest",
+    )
+
+
+def get_user_files(user_id: str) -> pymongo.cursor.Cursor:
+    """Get files uploaded by specific user"""
+
+    return get_files_collection().find({"uploader": user_id})
+
+
 def close_connection():
     """Close connection to mongodb"""
     client = g.pop("mongo_client", None)
